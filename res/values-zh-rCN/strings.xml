@@ -121,6 +121,14 @@
     <string name="save">存储</string>
     <string name="overwrite">复盖</string>
 
+    <!-- Tabs -->
+    <string name="tab_recent">最近播放</string>
+    <string name="tab_artists">演出者</string>
+    <string name="tab_albums">专辑</string>
+    <string name="tab_songs">歌曲</string>
+    <string name="tab_playlists">播放清单</string>
+    <string name="tab_genres">类型</string>
+
     <!-- Something went wrong -->
     <string name="error">错误</string>
 
