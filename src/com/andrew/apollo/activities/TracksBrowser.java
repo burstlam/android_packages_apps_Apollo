@@ -166,12 +166,8 @@ public class TracksBrowser extends FragmentActivity implements ServiceConnection
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                // Artist ID
-                long id = ApolloUtils.getArtistId(getArtist(), ARTIST_ID, this);
-                if (ApolloUtils.isAlbum(mimeType) && id != 0)
-                    tracksBrowser(id);
                 super.onBackPressed();
-                break;
+                return true;
             default:
                 break;
         }
