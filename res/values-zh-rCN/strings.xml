@@ -103,11 +103,11 @@
     <string name="select_theme">选择主题</string>
     <string name="version">Apollo播放器</string>
 
-    <!-- Settings keys -->
+    <!-- Settings keys
     <string name="key_themes">主题预览</string>
     <string name="key_themes_package">主题包名称</string>
-    <string name="key_themes_preferences">主题设置 </string>
-    <string name="key_build_version">版本</string>
+    <string name="key_themes_preferences">主题设置</string>
+    <string name="key_build_version">版本</string>  -->
 
     <!-- Theme layout Buttons -->
     <string name="apply_theme">套用主题</string>
