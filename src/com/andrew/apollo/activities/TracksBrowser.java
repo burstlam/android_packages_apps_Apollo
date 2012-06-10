@@ -60,6 +60,7 @@ import static com.andrew.apollo.Constants.PLAYLIST_NAME;
 import static com.andrew.apollo.Constants.PLAYLIST_QUEUE;
 import static com.andrew.apollo.Constants.PLAYLIST_FAVORITES;
 import static com.andrew.apollo.Constants.THEME_ITEM_BACKGROUND;
+import static com.andrew.apollo.Constants.UP_STARTS_ALBUM_ACTIVITY;
 
 /**
  * @author Andrew Neal
@@ -167,6 +168,13 @@ public class TracksBrowser extends FragmentActivity implements ServiceConnection
         switch (item.getItemId()) {
             case android.R.id.home:
                 super.onBackPressed();
+                if(bundle.getBoolean(UP_STARTS_ALBUM_ACTIVITY))
+                {
+                    // Artist ID
+                    long artistID = ApolloUtils.getArtistId(getArtist(), ARTIST_ID, this);
+                    if (ApolloUtils.isAlbum(mimeType) && artistID != 0)
+                        tracksBrowser(artistID);
+                }
                 return true;
             default:
                 break;
@@ -401,7 +409,6 @@ public class TracksBrowser extends FragmentActivity implements ServiceConnection
      * tracks for the same artist
      */
     private void tracksBrowser(long id) {
-
         bundle.putString(MIME_TYPE, Audio.Artists.CONTENT_TYPE);
         bundle.putString(ARTIST_KEY, getArtist());
         bundle.putLong(BaseColumns._ID, id);
