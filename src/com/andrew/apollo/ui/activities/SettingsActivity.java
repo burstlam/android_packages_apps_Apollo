@@ -79,11 +79,13 @@ public class SettingsActivity extends PreferenceActivity {
         // About
         showOpenSourceLicenses();
         // Update the version number
+        findPreference("version").setSummary(R.string.settings_version_code);
+
         try {
             final PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
-            findPreference("version").setSummary(packageInfo.versionName);
+            findPreference("modversion").setSummary(packageInfo.versionName);
         } catch (final NameNotFoundException e) {
-            findPreference("version").setSummary("?");
+            findPreference("modversion").setSummary("?");
         }
     }
 

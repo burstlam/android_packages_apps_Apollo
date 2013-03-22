@@ -39,6 +39,7 @@ import com.andrew.apollo.IApolloService;
 import com.andrew.apollo.MusicPlaybackService;
 import com.andrew.apollo.MusicStateListener;
 import com.andrew.apollo.R;
+import com.andrew.apollo.dialog.SleepModeDialog;
 import com.andrew.apollo.utils.ApolloUtils;
 import com.andrew.apollo.utils.Lists;
 import com.andrew.apollo.utils.MusicUtils;
@@ -220,7 +221,9 @@ public abstract class BaseActivity extends FragmentActivity implements ServiceCo
                 // Settings
                 NavUtils.openSettings(this);
                 return true;
-
+            case R.id.menu_sleep_mode:
+            	SleepModeDialog.show(this.getFragmentManager());
+            	return true;
             default:
                 break;
         }

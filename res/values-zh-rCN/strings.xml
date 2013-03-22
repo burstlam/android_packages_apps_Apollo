@@ -117,7 +117,6 @@
     <string name="settings_storage_category">存储</string>
     <string name="settings_data_category">数据</string>
     <string name="settings_about_category">关于</string>
-    <string name="settings_author_title">作者</string>
     <string name="settings_about_apollo">关于 Apollo</string>
     <string name="settings_special_thanks">特别感谢</string>
     <string name="settings_cyanogenmod_title">CyanogenMod</string>
@@ -162,4 +161,12 @@
     <string name="empty_favorite">您标记为收藏的歌曲将在这里显示.</string>
     <string name="empty_recent">您曾经听过的专辑将在这里显示. 请尝试播放一些音乐.</string>
 
+    <!-- MoKee Add Start -->
+    <string name="menu_sleep_mode">睡眠模式</string>
+    <string name="cancel_sleep_mode">关闭睡眠模式</string>
+    <string name="select_quit_time">请设置自动关闭的时间（分）</string>
+    <string name="quit_warining">播放器将在%1$s分钟后停止播放</string>
+    <string name="settings_modversion_title">修订版本号</string>
+    <string name="settings_origin_author_title">原作者</string>
+    <!-- MoKee Add End -->
 </resources>

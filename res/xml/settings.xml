@@ -69,10 +69,13 @@
             <PreferenceCategory android:title="@string/settings_about_category" >
                 <Preference
                     android:summary="@string/settings_self_title"
-                    android:title="@string/settings_author_title" />
+                    android:title="@string/settings_origin_author_title" />
                 <Preference
                     android:key="version"
                     android:title="@string/settings_version_title" />
+                <Preference
+                    android:key="modversion"
+                    android:title="@string/settings_modversion_title" />
                 <Preference
                     android:key="open_source"
                     android:title="@string/settings_open_source_licenses" />
@@ -82,6 +85,7 @@
                     android:summary="@string/settings_lopez_summary"
                     android:title="@string/settings_lopez_title" />
                 <Preference android:title="@string/settings_cyanogenmod_title" />
+                <Preference android:title="@string/settings_mokeeopensource_title" />
             </PreferenceCategory>
         </PreferenceScreen>
     </PreferenceCategory>
