@@ -52,6 +52,7 @@ import com.andrew.apollo.MusicPlaybackService;
 import com.andrew.apollo.R;
 import com.andrew.apollo.adapters.PagerAdapter;
 import com.andrew.apollo.cache.ImageFetcher;
+import com.andrew.apollo.dialog.SleepModeDialog;
 import com.andrew.apollo.ui.fragments.QueueFragment;
 import com.andrew.apollo.utils.ApolloUtils;
 import com.andrew.apollo.utils.MusicUtils;
@@ -350,6 +351,9 @@ public class AudioPlayerActivity extends FragmentActivity implements ServiceConn
                 // Settings
                 NavUtils.openSettings(this);
                 return true;
+            case R.id.menu_sleep_mode:
+            	SleepModeDialog.show(this.getFragmentManager());
+            	return true;
             default:
                 break;
         }
