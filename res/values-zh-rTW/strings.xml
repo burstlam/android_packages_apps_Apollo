@@ -1,135 +1,165 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2012 Andrew Neal
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+ -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
-    <!-- App name -->
-    <string name="app_name">Apollo播放器</string>
+    <string name="app_name">Apollo</string>
 
-    <!-- Content descriptions for the Bottom Action Bar -->
-    <string name="cd_favorite">新增至播放清單</string>
-    <string name="cd_search">搜尋音樂</string>
-    <string name="cd_overflow">更多選項</string>
-    <string name="cd_bottom_action_bar_album_art">這樂曲的專輯封面</string>
-    <string name="cd_repeat">重播單曲/全部</string>
-    <string name="cd_previous">跳至上一首</string>
-    <string name="cd_play">播放/暫停</string>
-    <string name="cd_next">跳至下一首</string>
-    <string name="cd_shuffle">隨機播放</string>
+    <!-- Page titles -->
+    <string name="page_recent">最近播放</string>
+    <string name="page_artists">演出者</string>
+    <string name="page_albums">專輯</string>
+    <string name="page_songs">歌曲</string>
+    <string name="page_playlists">播放清單</string>
+    <string name="page_genres">類別</string>
 
-    <!-- AudioPlayer title -->
-    <string name="nowplaying">現在播放中</string>
+    <!-- Option menu items -->
+    <string name="menu_settings">設定</string>
+    <string name="menu_search">搜索</string>
+    <string name="menu_shuffle">全部隨機播放</string>
+    <string name="menu_play_all">全部播放</string>
+    <string name="menu_sort_by">排序方式</string>
+    <string name="menu_shop">購買主題</string>
+    <string name="menu_clear_recents">清除最近播放清單</string>
+    <string name="menu_clear_queue">清除清單</string>
+    <string name="menu_save_queue">儲存清單</string>
+    <string name="menu_share">分享</string>
+    <string name="menu_add_to_homescreen">固定到主螢幕</string>
+    <string name="menu_equalizer">均衡器</string>
+    <string name="menu_simple">簡單</string>
+    <string name="menu_detailed">詳細</string>
+    <string name="menu_grid">網格</string>
+    <string name="menu_view_as">檢視</string>
 
-    <!-- Used to indicate the number of albums for an artist -->
-    <plurals name="Nalbums">
+    <!-- Playlist items -->
+    <string name="add_to_playlist">添加到播放清單</string>
+    <string name="add_to_favorites">添加到收藏夾</string>
+    <string name="add_to_queue">添加到清單</string>
+    <string name="remove_from_favorites">從收藏夾移除</string>
+    <string name="remove_from_recent">從最近播放清單移除</string>
+    <string name="remove_from_queue">從清單移除</string>
 
-        <!-- Number of albums is one -->
-        <item quantity="one">專輯</item>
-        <!-- Number of albums is more than one -->
-        <item quantity="other"><xliff:g id="count">%d</xliff:g>專輯</item>
-    </plurals>
+    <!-- Sort orders -->
+    <string name="sort_order_entry_az">A-Z</string>
+    <string name="sort_order_entry_za">Z-A</string>
+    <string name="sort_order_entry_artist">演出者</string>
+    <string name="sort_order_entry_album">專輯</string>
+    <string name="sort_order_entry_year">發行年份</string>
+    <string name="sort_order_entry_duration">播放長度</string>
+    <string name="sort_order_entry_date_added">添加日期</string>
+    <string name="sort_order_entry_track_list">曲目清單</string>
+    <string name="sort_order_entry_number_of_songs">歌曲數量</string>
+    <string name="sort_order_entry_number_of_albums">專輯數量</string>
 
-    <!-- Used to indicate the number of songs for an album -->
+    <!-- Default playlist names -->
+    <string name="playlist_favorites">收藏夾</string>
+    <string name="playlist_last_added">最后添加</string>
 
-    <plurals name="Nsongs">
+    <!-- AlertDialog items -->
+    <string name="new_playlist">新的播放清單</string>
+    <string name="save">儲存</string>
+    <string name="cancel">取消</string>
+    <string name="overwrite">覆寫</string>
+    <string name="new_playlist_name_template">播放清單 <xliff:g id="number">%d</xliff:g></string>
+    <string name="create_playlist_prompt" msgid="942607395076646686">"播放清單名稱"</string>
+    <string name="delete_dialog_title">移除 <xliff:g id="item" example="專輯">%s</xliff:g>嗎?</string>
+    <string name="cannot_be_undone">此作業無法被還原</string>
+    <string name="delete_warning">這將永久移除緩衝區的影像</string>
+    <string name="new_photo">從圖程式庫中選取照片</string>
+    <string name="google_search">谷歌搜索</string>
+    <string name="use_default">使用預設照片</string>
+    <string name="old_photo">使用舊照片</string>
 
-        <!-- Number of songs is one -->
-        <item quantity="one">1 首歌</item>
-        <item quantity="other"><xliff:g id="count">%d</xliff:g> 首歌</item>
-    </plurals>
+    <!-- Context menu items -->
+    <string name="context_menu_play_selection">播放</string>
+    <string name="context_menu_play_next">播放下一首</string>
+    <string name="context_menu_more_by_artist">來自此演出者的更多作品</string>
+    <string name="context_menu_rename_playlist">重命名</string>
+    <string name="context_menu_delete">移除</string>
+    <string name="context_menu_fetch_album_art">抓取專輯封面</string>
+    <string name="context_menu_fetch_artist_image">抓取演出者影像</string>
+    <string name="context_menu_open_in_play_store">在 Play 商店中開啟</string>
+    <string name="context_menu_remove_from_recent">從最近播放清單移除</string>
+    <string name="context_menu_use_as_ringtone">設為鈴聲</string>
 
-    <!-- Toasts after adding song(s) to playlists -->
-    <plurals name="NNNtrackstoplaylist">
+    <!-- Content descriptions -->
+    <string name="accessibility_play">播放</string>
+    <string name="accessibility_pause">暫停</string>
+    <string name="accessibility_next">下一首</string>
+    <string name="accessibility_prev">前一首</string>
+    <string name="accessibility_shuffle">隨機播放</string>
+    <string name="accessibility_shuffle_all">全部隨機播放</string>
+    <string name="accessibility_repeat">重複播放</string>
+    <string name="accessibility_repeat_all">全部重複播放</string>
+    <string name="accessibility_repeat_one">單曲重複播放</string>
 
-        <!-- message shown when one song was added -->
-        <item quantity="one">1首新曲已增至播放清單</item>
-        <!-- message shown when zero or more than one song was added -->
-        <item quantity="other"><xliff:g id="number" example="27">%d</xliff:g> 首新曲已增至播放清單.</item>
-    </plurals>
-
-    <!-- Headers -->
-    <string name="album_header">專輯清單</string>
-    <string name="track_header">樂曲清單</string>
-
-    <!-- Options MenuItems -->
-    <string name="settings">設定</string>
-    <string name="shuffle_all">全部隨機播放</string>
-    <string name="share">分享</string>
-    <string name="play_store">Google Play</string>
-
-    <!-- Set track as ringtone -->
-    <string name="set_as_ringtone">\"<xliff:g id="name" example="Alarm Bell">%s</xliff:g>\" 設成來電鈴聲</string>
-
-    <!-- Do not translate. Duration format for duration < 1 hour -->
-    <string name="durationformatshort" translatable="false"><xliff:g id="format">%2$d:%5$02d</xliff:g></string>
-    <!-- Do not translate. Duration format for duration >= 1 hour -->
-    <string name="durationformatlong" translatable="false"><xliff:g id="format">%1$d:%3$02d:%5$02d</xliff:g></string>
-
-    <!-- Transient popup message shown after renaming a playlist -->
-    <string name="rename_playlist">命名播放清單</string>
-
-    <!-- Shuffle and repeat messages -->
-    <string name="repeat_one">重複單曲</string>
-    <string name="repeat_all">重複全部</string>
-    <string name="repeat_off">重複關閉</string>
-    <string name="shuffle_off">隨機播放關閉</string>
-    <string name="shuffle_on">隨機播放開啟</string>
-
-    <!-- Share Intent -->
-    <string name="now_listening_to">現正播放:</string>
-    <string name="by">演出者：</string>
-    <string name="share_track_using">分享樂曲工具</string>
-
-    <!-- ContextMenu items -->
-    <string name="play_all">全部播放</string>
-    <string name="add_to_playlist">新增至播放清單</string>
-    <string name="use_as_ringtone">設成來電鈴聲</string>
-    <string name="delete_playlist">刪除播放清單</string>
-    <string name="search">搜尋</string>
-    <string name="remove">從播放清單中移除</string>
-
-    <!-- App Widgets -->
-    <string name="apollo_1x1">Apollo (1x1)</string>
-    <string name="apollo_4x1">Apollo (4x1)</string>
-    <string name="apollo_4x2">Apollo (4x2)</string>
-
-    <!-- Unknown genre name -->
-    <string name="unknown">未知</string>
+    <!-- Toast messages -->
+    <string name="pinned_to_home_screen"><xliff:g id="name">%s</xliff:g>已固定到主螢幕</string>
+    <string name="could_not_be_pinned_to_home_screen"><xliff:g id="name">%s</xliff:g>無法被固定到主螢幕</string>
+    <string name="set_as_ringtone">\"<xliff:g id="name" example="警鐘">%s</xliff:g>\" 設定為鈴聲</string>
+    <string name="playlist_renamed">播放清單已被重命名</string>
+    <string name="theme_set">主題已設定為<xliff:g id="name">%s</xliff:g></string>
 
     <!-- Settings -->
-    <string name="about">關於</string>
-    <string name="eqalizer">均衡器</string>
-    <string name="header_interface">操作介面</string>
-    <string name="themes">主題</string>
-    <string name="apollo_themes">為播放器設定主題</string>
-    <string name="select_theme">選擇主題</string>
-    <string name="version">Apollo播放器</string>
+    <string name="settings_ui_category">介面</string>
+    <string name="settings_storage_category">儲存</string>
+    <string name="settings_data_category">資料</string>
+    <string name="settings_about_category">關於</string>
+    <string name="settings_author_title">作者</string>
+    <string name="settings_about_apollo">關於 Apollo</string>
+    <string name="settings_special_thanks">特別感謝</string>
+    <string name="settings_cyanogenmod_title">CyanogenMod</string>
+    <string name="settings_self_title">Andrew Neal</string>
+    <string name="settings_lopez_title">A.J. Lopez</string>
+    <string name="settings_lopez_summary">圖像與 Play 商店橫幅設計</string>
+    <string name="settings_color_scheme_title">選取 Apollo 預設配色方案</string>
+    <string name="settings_color_scheme_summary">變更 Apollo 介面的重點色</string>
+    <string name="settings_theme_chooser_title">主題選取器</string>
+    <string name="settings_delete_cache_title">清除緩衝區</string>
+    <string name="settings_delete_cache_summary">清除所有緩衝區的影像</string>
+    <string name="settings_download_only_on_wifi_title">僅使用 Wi-Fi 下載</string>
+    <string name="settings_download_only_on_wifi_summary">不使用移動網路資料下載 (可減少運營商收費)</string>
+    <string name="settings_download_missing_artwork_title">下載缺失的專輯封面</string>
+    <string name="settings_download_artist_images_title">下載缺失的演出者的影像</string>
+    <string name="settings_open_source_licenses">開源許可證</string>
+    <string name="settings_use_lockscreen_controls">使用鎖屏控制</string>
+    <string name="settings_version_title">版本號</string>
 
-    <!-- Settings keys
-    <string name="key_themes">主題預覽</string>
-    <string name="key_themes_package">主題包名稱</string>
-    <string name="key_themes_preferences">主題設定</string>
-    <string name="key_build_version">版本</string>  -->
+    <!-- Share Intent -->
+    <string name="now_listening_to">#NowPlaying <xliff:g id="title">%1$s</xliff:g> - <xliff:g id="artist">%2$s</xliff:g> #Apollo</string>
+    <string name="share_track_using">曲目分享方式:</string>
 
-    <!-- Theme layout Buttons -->
-    <string name="apply_theme">套用主題</string>
-    <string name="get_more_themes">取得更多主題包</string>
+    <!-- ColorPicker -->
+    <string name="color_picker_title">配色方案</string>
+    <string name="hex">#</string>
+    <string name="current_color">目前</string>
+    <string name="new_color">新的</string>
 
-    <!-- Playlists menu -->
-    <string name="favorite">播放清單</string>
-    <string name="queue">排序</string>
-    <string name="new_playlist">新增</string>
-    <string name="new_playlist_name_template">清單 <xliff:g id="number">%d</xliff:g></string>
-    <string name="save">儲存</string>
-    <string name="overwrite">覆蓋</string>
+    <!-- App widget -->
+    <string name="app_widget_small">Apollo: 4x1</string>
+    <string name="app_widget_large">Apollo: 4x2</string>
+    <string name="app_widget_large_alt">Apollo: 4x2 (延伸控制)</string>
+    <string name="app_widget_recent">Apollo: 最近播放</string>
+    <string name="app_widget_text_separator">-</string>
 
-    <!-- Tabs -->
-    <string name="tab_recent">最近播放</string>
-    <string name="tab_artists">演出者</string>
-    <string name="tab_albums">專輯</string>
-    <string name="tab_songs">歌曲</string>
-    <string name="tab_playlists">播放清單</string>
-    <string name="tab_genres">類型</string>
-
-    <!-- Something went wrong -->
-    <string name="error">錯誤</string>
+    <!-- Empty list / error messages -->
+    <string name="no_effects_for_you">無法開啟均衡器.</string>
+    <string name="empty_music">請使用 USB 資料線把音樂從您的電腦複製到您的裝置中.</string>
+    <string name="empty_last_added">您在這一個月以來添加的歌曲將在這裡察看.</string>
+    <string name="empty_search">無搜索結果</string>
+    <string name="empty_favorite">您記號為收藏的歌曲將在這裡察看.</string>
+    <string name="empty_recent">您曾經聽過的專輯將在這裡察看. 請嘗試播放一些音樂.</string>
 
 </resources>
