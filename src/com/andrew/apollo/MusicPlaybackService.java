@@ -726,11 +726,11 @@ public class MusicPlaybackService extends Service {
             mNotificationHelper.killNotification();
         }  else if (SLEEP_MODE_STOP_ACTION.equals(action)) {
             //AlarmSet
-        	setAlarmSet(false);
+            setAlarmSet(false);
             pause();
             mPausedByTransientLossOfFocus = false;
             seek(0);
-            killNotification();
+            mNotificationHelper.killNotification();
         } else if (REPEAT_ACTION.equals(action)) {
             cycleRepeat();
         } else if (SHUFFLE_ACTION.equals(action)) {
