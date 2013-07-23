@@ -468,7 +468,7 @@ public class MusicPlaybackService extends Service {
 		alarmSet = enable;
 	}
 
-	/**
+    /**
      * {@inheritDoc}
      */
     @Override
