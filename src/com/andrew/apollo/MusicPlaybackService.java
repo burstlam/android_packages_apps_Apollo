@@ -44,6 +44,7 @@ import android.os.RemoteException;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Audio.AudioColumns;
+import android.util.Log;
 
 import com.andrew.apollo.appwidgets.AppWidgetLarge;
 import com.andrew.apollo.appwidgets.AppWidgetLargeAlternate;
@@ -70,6 +71,9 @@ import java.util.TreeSet;
  */
 @SuppressLint("NewApi")
 public class MusicPlaybackService extends Service {
+    private static final String TAG = "MusicPlaybackService";
+    private static final boolean D = false;
+
     /**
      * Indicates that the music has paused or resumed
      */
@@ -122,7 +126,7 @@ public class MusicPlaybackService extends Service {
      * Called to go to stop the playback
      */
     public static final String STOP_ACTION = "com.andrew.apollo.stop";
-    
+
     public static final String SLEEP_MODE_STOP_ACTION = "com.andrew.apollo.sleep_mode_stop";
 
     /**
@@ -159,9 +163,9 @@ public class MusicPlaybackService extends Service {
     public static final String REFRESH = "com.andrew.apollo.refresh";
 
     /**
-     * Used by the alarm intent to remove the notification
+     * Used by the alarm intent to shutdown the service after being idle
      */
-    private static final String KILL_NOTIFICATION = "com.andrew.apollo.killnotification";
+    private static final String SHUTDOWN = "com.andrew.apollo.shutdown";
 
     /**
      * Called to update the remote control client
@@ -352,7 +356,8 @@ public class MusicPlaybackService extends Service {
      * for some time
      */
     private AlarmManager mAlarmManager;
-    private PendingIntent mKillNotificationIntent;
+    private PendingIntent mShutdownIntent;
+    private boolean mShutdownScheduled;
 
     /**
      * The cursor used to retrieve info on the current track and run the
@@ -428,8 +433,6 @@ public class MusicPlaybackService extends Service {
 
     private MusicPlayerHandler mPlayerHandler;
 
-    private DelayedHandler mDelayedStopHandler;
-
     private BroadcastReceiver mUnmountReceiver = null;
 
     /**
@@ -456,7 +459,7 @@ public class MusicPlaybackService extends Service {
      * AlarmSet
      */
     private static boolean alarmSet = false;
-    
+
     public boolean getAlarmSet() {
 		return alarmSet;
 	}
@@ -470,7 +473,8 @@ public class MusicPlaybackService extends Service {
      */
     @Override
     public IBinder onBind(final Intent intent) {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
+        if (D) Log.d(TAG, "Service bound, intent = " + intent);
+        cancelShutdown();
         mServiceInUse = true;
         return mBinder;
     }
@@ -480,6 +484,7 @@ public class MusicPlaybackService extends Service {
      */
     @Override
     public boolean onUnbind(final Intent intent) {
+        if (D) Log.d(TAG, "Service unbound");
         mServiceInUse = false;
         saveQueue(true);
 
@@ -494,8 +499,7 @@ public class MusicPlaybackService extends Service {
             // Also delay stopping the service if we're transitioning between
             // tracks.
         } else if (mPlayListLen > 0 || mPlayerHandler.hasMessages(TRACK_ENDED)) {
-            final Message msg = mDelayedStopHandler.obtainMessage();
-            mDelayedStopHandler.sendMessageDelayed(msg, IDLE_DELAY);
+            scheduleDelayedShutdown();
             return true;
         }
         stopSelf(mServiceStartId);
@@ -507,7 +511,7 @@ public class MusicPlaybackService extends Service {
      */
     @Override
     public void onRebind(final Intent intent) {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
+        cancelShutdown();
         mServiceInUse = true;
     }
 
@@ -516,6 +520,7 @@ public class MusicPlaybackService extends Service {
      */
     @Override
     public void onCreate() {
+        if (D) Log.d(TAG, "Creating service");
         super.onCreate();
 
         // Initialize the favorites and recents databases
@@ -538,9 +543,8 @@ public class MusicPlaybackService extends Service {
                 android.os.Process.THREAD_PRIORITY_BACKGROUND);
         thread.start();
 
-        // Initialize the handlers
+        // Initialize the handler
         mPlayerHandler = new MusicPlayerHandler(this, thread.getLooper());
-        mDelayedStopHandler = new DelayedHandler(this);
 
         // Initialize the audio manager and register any headset controls for
         // playback
@@ -549,7 +553,7 @@ public class MusicPlaybackService extends Service {
                 MediaButtonIntentReceiver.class.getName());
         mAudioManager.registerMediaButtonEventReceiver(mMediaButtonReceiverComponent);
 
-        // Use the remote control APIs (if available) to set the playback state
+        // Use the remote control APIs to set the playback state
         setUpRemoteControlClient();
 
         // Initialize the preferences
@@ -581,21 +585,20 @@ public class MusicPlaybackService extends Service {
         mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getClass().getName());
         mWakeLock.setReferenceCounted(false);
 
-        // Initialize the notification removal intent
-        final Intent killIntent = new Intent(this, MusicPlaybackService.class);
-        killIntent.setAction(KILL_NOTIFICATION);
+        // Initialize the delayed shutdown intent
+        final Intent shutdownIntent = new Intent(this, MusicPlaybackService.class);
+        shutdownIntent.setAction(SHUTDOWN);
 
         mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        mKillNotificationIntent = PendingIntent.getService(this, 0, killIntent, 0);
+        mShutdownIntent = PendingIntent.getService(this, 0, shutdownIntent, 0);
+
+        // Listen for the idle state
+        scheduleDelayedShutdown();
 
         // Bring the queue back
         reloadQueue();
         notifyChange(QUEUE_CHANGED);
         notifyChange(META_CHANGED);
-
-        // Listen for the idle state
-        final Message message = mDelayedStopHandler.obtainMessage();
-        mDelayedStopHandler.sendMessageDelayed(message, IDLE_DELAY);
     }
 
     /**
@@ -624,6 +627,7 @@ public class MusicPlaybackService extends Service {
      */
     @Override
     public void onDestroy() {
+        if (D) Log.d(TAG, "Destroying service");
         super.onDestroy();
         // Remove any sound effects
         final Intent audioEffectsIntent = new Intent(
@@ -633,7 +637,7 @@ public class MusicPlaybackService extends Service {
         sendBroadcast(audioEffectsIntent);
 
         // remove any pending alarms
-        mAlarmManager.cancel(mKillNotificationIntent);
+        mAlarmManager.cancel(mShutdownIntent);
 
         // Release the player
         mPlayer.release();
@@ -643,8 +647,7 @@ public class MusicPlaybackService extends Service {
         mAudioManager.abandonAudioFocus(mAudioFocusListener);
         mAudioManager.unregisterRemoteControlClient(mRemoteControlClient);
 
-        // Remove any callbacks from the handlers
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
+        // Remove any callbacks from the handler
         mPlayerHandler.removeCallbacksAndMessages(null);
 
         // Close the cursor
@@ -669,6 +672,7 @@ public class MusicPlaybackService extends Service {
      */
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
+        if (D) Log.d(TAG, "Got new intent " + intent + ", startId = " + startId);
         mServiceStartId = startId;
 
         if (intent != null) {
@@ -679,24 +683,43 @@ public class MusicPlaybackService extends Service {
                 updateNotification();
             }
 
-            if (KILL_NOTIFICATION.equals(action)) {
-                mNotificationHelper.killNotification();
-            } else {
-                handleCommandIntent(intent);
+            if (SHUTDOWN.equals(action)) {
+                mShutdownScheduled = false;
+                releaseServiceUiAndStop();
+                return START_NOT_STICKY;
             }
+
+            handleCommandIntent(intent);
         }
 
         // Make sure the service will shut down on its own if it was
         // just started but not bound to and nothing is playing
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-        final Message msg = mDelayedStopHandler.obtainMessage();
-        mDelayedStopHandler.sendMessageDelayed(msg, IDLE_DELAY);
+        scheduleDelayedShutdown();
         return START_STICKY;
+    }
+
+    private void releaseServiceUiAndStop() {
+        if (isPlaying()
+                || mPausedByTransientLossOfFocus
+                || mPlayerHandler.hasMessages(TRACK_ENDED)) {
+            return;
+        }
+
+        if (D) Log.d(TAG, "Nothing is playing anymore, releasing notification");
+        mNotificationHelper.killNotification();
+        mAudioManager.abandonAudioFocus(mAudioFocusListener);
+
+        if (!mServiceInUse) {
+            saveQueue(true);
+            stopSelf(mServiceStartId);
+        }
     }
 
     private void handleCommandIntent(Intent intent) {
         final String action = intent.getAction();
         final String command = SERVICECMD.equals(action) ? intent.getStringExtra(CMDNAME) : null;
+
+        if (D) Log.d(TAG, "handleCommandIntent: action = " + action + ", command = " + command);
 
         if (CMDNEXT.equals(command) || NEXT_ACTION.equals(action)) {
             gotoNext(true);
@@ -723,14 +746,14 @@ public class MusicPlaybackService extends Service {
             pause();
             mPausedByTransientLossOfFocus = false;
             seek(0);
-            mNotificationHelper.killNotification();
+            releaseServiceUiAndStop();
         }  else if (SLEEP_MODE_STOP_ACTION.equals(action)) {
             //AlarmSet
             setAlarmSet(false);
             pause();
             mPausedByTransientLossOfFocus = false;
             seek(0);
-            mNotificationHelper.killNotification();
+            releaseServiceUiAndStop();
         } else if (REPEAT_ACTION.equals(action)) {
             cycleRepeat();
         } else if (SHUFFLE_ACTION.equals(action)) {
@@ -743,7 +766,6 @@ public class MusicPlaybackService extends Service {
      */
     private void updateNotification() {
         if (!mAnyActivityInForeground && isPlaying()) {
-            mAlarmManager.cancel(mKillNotificationIntent);
             mNotificationHelper.buildNotification(getAlbumName(), getArtistName(),
                     getTrackName(), getAlbumId(), getAlbumArt(), isPlaying());
         } else if (mAnyActivityInForeground) {
@@ -816,16 +838,19 @@ public class MusicPlaybackService extends Service {
         }
     }
 
-    /**
-     * Changes the notification buttons to a paused state and beging the
-     * countdown to calling {@code #stopForeground(true)}
-     */
-    private void gotoIdleState() {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-        final Message msg = mDelayedStopHandler.obtainMessage();
-        mDelayedStopHandler.sendMessageDelayed(msg, IDLE_DELAY);
+    private void scheduleDelayedShutdown() {
+        if (D) Log.v(TAG, "Scheduling shutdown in " + IDLE_DELAY + " ms");
         mAlarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                SystemClock.elapsedRealtime() + IDLE_DELAY, mKillNotificationIntent);
+                SystemClock.elapsedRealtime() + IDLE_DELAY, mShutdownIntent);
+        mShutdownScheduled = true;
+    }
+
+    private void cancelShutdown() {
+        if (D) Log.d(TAG, "Cancelling delayed shutdown, scheduled = " + mShutdownScheduled);
+        if (mShutdownScheduled) {
+            mAlarmManager.cancel(mShutdownIntent);
+            mShutdownScheduled = false;
+        }
     }
 
     /**
@@ -834,6 +859,7 @@ public class MusicPlaybackService extends Service {
      * @param goToIdle True to go to the idle state, false otherwise
      */
     private void stop(final boolean goToIdle) {
+        if (D) Log.d(TAG, "Stopping playback, goToIdle = " + goToIdle);
         if (mPlayer.isInitialized()) {
             mPlayer.stop();
         }
@@ -843,7 +869,7 @@ public class MusicPlaybackService extends Service {
             mCursor = null;
         }
         if (goToIdle) {
-            gotoIdleState();
+            scheduleDelayedShutdown();
             mIsSupposedToBePlaying = false;
         } else {
             stopForeground(false);
@@ -998,7 +1024,7 @@ public class MusicPlaybackService extends Service {
                 if (mOpenFailedCounter++ < 10 && mPlayListLen > 1) {
                     final int pos = getNextPosition(false);
                     if (pos < 0) {
-                        gotoIdleState();
+                        scheduleDelayedShutdown();
                         if (mIsSupposedToBePlaying) {
                             mIsSupposedToBePlaying = false;
                             notifyChange(PLAYSTATE_CHANGED);
@@ -1011,7 +1037,8 @@ public class MusicPlaybackService extends Service {
                     mCursor = getCursorForId(mPlayList[mPlayPos]);
                 } else {
                     mOpenFailedCounter = 0;
-                    gotoIdleState();
+                    Log.w(TAG, "Failed to open file for playback");
+                    scheduleDelayedShutdown();
                     if (mIsSupposedToBePlaying) {
                         mIsSupposedToBePlaying = false;
                         notifyChange(PLAYSTATE_CHANGED);
@@ -1105,6 +1132,7 @@ public class MusicPlaybackService extends Service {
      */
     private void setNextTrack() {
         mNextPlayPos = getNextPosition(false);
+        if (D) Log.d(TAG, "setNextTrack: next play position = " + mNextPlayPos);
         if (mNextPlayPos >= 0 && mPlayList != null) {
             final long id = mPlayList[mNextPlayPos];
             mPlayer.setNextDataSource(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/" + id);
@@ -1219,6 +1247,8 @@ public class MusicPlaybackService extends Service {
      * Notify the change-receivers that something has changed.
      */
     private void notifyChange(final String what) {
+        if (D) Log.d(TAG, "notifyChange: what = " + what);
+
         final Intent intent = new Intent(what);
         intent.putExtra("id", getAudioId());
         intent.putExtra("artist", getArtistName());
@@ -1421,6 +1451,12 @@ public class MusicPlaybackService extends Service {
             final long seekpos = mPreferences.getLong("seekpos", 0);
             seek(seekpos >= 0 && seekpos < duration() ? seekpos : 0);
 
+            if (D) {
+                Log.d(TAG, "restored queue, currently at position "
+                        + position() + "/" + duration()
+                        + " (requested " + seekpos + ")");
+            }
+
             int repmode = mPreferences.getInt("repeatmode", REPEAT_NONE);
             if (repmode != REPEAT_ALL && repmode != REPEAT_CURRENT) {
                 repmode = REPEAT_NONE;
@@ -1478,6 +1514,7 @@ public class MusicPlaybackService extends Service {
      * @param path The path of the file to open
      */
     public boolean openFile(final String path) {
+        if (D) Log.d(TAG, "openFile: path = " + path);
         synchronized (this) {
             if (path == null) {
                 return false;
@@ -1845,6 +1882,9 @@ public class MusicPlaybackService extends Service {
     public void play() {
         int status = mAudioManager.requestAudioFocus(mAudioFocusListener,
                 AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+
+        if (D) Log.d(TAG, "Starting playback: audio focus request status = " + status);
+
         if (status != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             return;
         }
@@ -1868,6 +1908,7 @@ public class MusicPlaybackService extends Service {
                 notifyChange(PLAYSTATE_CHANGED);
             }
 
+            cancelShutdown();
             updateNotification();
         } else if (mPlayListLen <= 0) {
             setShuffleMode(SHUFFLE_AUTO);
@@ -1878,11 +1919,12 @@ public class MusicPlaybackService extends Service {
      * Temporarily pauses playback.
      */
     public void pause() {
+        if (D) Log.d(TAG, "Pausing playback");
         synchronized (this) {
             mPlayerHandler.removeMessages(FADEUP);
             if (mIsSupposedToBePlaying) {
                 mPlayer.pause();
-                gotoIdleState();
+                scheduleDelayedShutdown();
                 mIsSupposedToBePlaying = false;
                 notifyChange(PLAYSTATE_CHANGED);
             }
@@ -1893,13 +1935,16 @@ public class MusicPlaybackService extends Service {
      * Changes from the current track to the next track
      */
     public void gotoNext(final boolean force) {
+        if (D) Log.d(TAG, "Going to next track");
         synchronized (this) {
             if (mPlayListLen <= 0) {
+                if (D) Log.d(TAG, "No play queue");
+                scheduleDelayedShutdown();
                 return;
             }
             final int pos = getNextPosition(force);
             if (pos < 0) {
-                gotoIdleState();
+                scheduleDelayedShutdown();
                 if (mIsSupposedToBePlaying) {
                     mIsSupposedToBePlaying = false;
                     notifyChange(PLAYSTATE_CHANGED);
@@ -1919,6 +1964,7 @@ public class MusicPlaybackService extends Service {
      * Changes from the current track to the previous played track
      */
     public void prev() {
+        if (D) Log.d(TAG, "Going to previous track");
         synchronized (this) {
             if (mShuffleMode == SHUFFLE_NORMAL) {
                 // Go to previously-played track and remove it from the history
@@ -2180,38 +2226,6 @@ public class MusicPlaybackService extends Service {
         }
     };
 
-    private static final class DelayedHandler extends Handler {
-        private final WeakReference<MusicPlaybackService> mService;
-
-        /**
-         * Constructor of <code>DelayedHandler</code>
-         *
-         * @param service The service to use.
-         */
-        public DelayedHandler(final MusicPlaybackService service) {
-            mService = new WeakReference<MusicPlaybackService>(service);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void handleMessage(final Message msg) {
-            final MusicPlaybackService service = mService.get();
-            if (service == null) {
-                return;
-            }
-            if (service.isPlaying()
-                    || service.mPausedByTransientLossOfFocus
-                    || service.mServiceInUse
-                    || service.mPlayerHandler.hasMessages(TRACK_ENDED)) {
-                return;
-            }
-            service.saveQueue(true);
-            service.stopSelf(service.mServiceStartId);
-        }
-    }
-
     private static final class MusicPlayerHandler extends Handler {
         private final WeakReference<MusicPlaybackService> mService;
         private float mCurrentVolume = 1.0f;
@@ -2285,6 +2299,7 @@ public class MusicPlaybackService extends Service {
                     service.mWakeLock.release();
                     break;
                 case FOCUSCHANGE:
+                    if (D) Log.d(TAG, "Received audio focus change event " + msg.arg1);
                     switch (msg.arg1) {
                         case AudioManager.AUDIOFOCUS_LOSS:
                         case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
