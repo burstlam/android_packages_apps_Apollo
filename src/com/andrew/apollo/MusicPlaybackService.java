@@ -43,6 +43,7 @@ import android.os.PowerManager.WakeLock;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.provider.MediaStore;
+import android.provider.MediaStore.Audio.AlbumColumns;
 import android.provider.MediaStore.Audio.AudioColumns;
 import android.util.Log;
 
@@ -78,6 +79,12 @@ public class MusicPlaybackService extends Service {
      * Indicates that the music has paused or resumed
      */
     public static final String PLAYSTATE_CHANGED = "com.andrew.apollo.playstatechanged";
+
+    /**
+     * Indicates that music playback position within
+     * a title was changed
+     */
+    public static final String POSITION_CHANGED = "com.android.apollo.positionchanged";
 
     /**
      * Indicates the meta data has changed in some way, like a track change
@@ -291,6 +298,14 @@ public class MusicPlaybackService extends Service {
     };
 
     /**
+     * The columns used to retrieve any info from the current album
+     */
+    private static final String[] ALBUM_PROJECTION = new String[] {
+            MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ARTIST,
+            MediaStore.Audio.Albums.LAST_YEAR
+    };
+
+    /**
      * Keeps a mapping of the track history
      */
     private static final LinkedList<Integer> mHistory = Lists.newLinkedList();
@@ -364,6 +379,12 @@ public class MusicPlaybackService extends Service {
      * necessary queries to play audio files
      */
     private Cursor mCursor;
+
+    /**
+     * The cursor used to retrieve info on the album the current track is
+     * part of, if any.
+     */
+    private Cursor mAlbumCursor;
 
     /**
      * Monitors the audio state
@@ -613,12 +634,32 @@ public class MusicPlaybackService extends Service {
         mAudioManager.registerRemoteControlClient(mRemoteControlClient);
 
         // Flags for the media transport control that this client supports.
-        final int flags = RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
+        int flags = RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
                 | RemoteControlClient.FLAG_KEY_MEDIA_NEXT
                 | RemoteControlClient.FLAG_KEY_MEDIA_PLAY
                 | RemoteControlClient.FLAG_KEY_MEDIA_PAUSE
                 | RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE
                 | RemoteControlClient.FLAG_KEY_MEDIA_STOP;
+
+        if (ApolloUtils.hasJellyBeanMR2()) {
+            flags |= RemoteControlClient.FLAG_KEY_MEDIA_POSITION_UPDATE;
+
+            mRemoteControlClient.setOnGetPlaybackPositionListener(
+                    new RemoteControlClient.OnGetPlaybackPositionListener() {
+                @Override
+                public long onGetPlaybackPosition() {
+                    return position();
+                }
+            });
+            mRemoteControlClient.setPlaybackPositionUpdateListener(
+                    new RemoteControlClient.OnPlaybackPositionUpdateListener() {
+                @Override
+                public void onPlaybackPositionUpdate(long newPositionMs) {
+                    seek(newPositionMs);
+                }
+            });
+        }
+
         mRemoteControlClient.setTransportControlFlags(flags);
     }
 
@@ -651,10 +692,7 @@ public class MusicPlaybackService extends Service {
         mPlayerHandler.removeCallbacksAndMessages(null);
 
         // Close the cursor
-        if (mCursor != null) {
-            mCursor.close();
-            mCursor = null;
-        }
+        closeCursor();
 
         // Unregister the mount listener
         unregisterReceiver(mIntentReceiver);
@@ -864,10 +902,7 @@ public class MusicPlaybackService extends Service {
             mPlayer.stop();
         }
         mFileToPlay = null;
-        if (mCursor != null) {
-            mCursor.close();
-            mCursor = null;
-        }
+        closeCursor();
         if (goToIdle) {
             scheduleDelayedShutdown();
             mIsSupposedToBePlaying = false;
@@ -912,10 +947,7 @@ public class MusicPlaybackService extends Service {
                 if (mPlayListLen == 0) {
                     stop(true);
                     mPlayPos = -1;
-                    if (mCursor != null) {
-                        mCursor.close();
-                        mCursor = null;
-                    }
+                    closeCursor();
                 } else {
                     if (mPlayPos >= mPlayListLen) {
                         mPlayPos = 0;
@@ -960,23 +992,56 @@ public class MusicPlaybackService extends Service {
         }
         mPlayListLen += addlen;
         if (mPlayListLen == 0) {
-            mCursor.close();
-            mCursor = null;
+            closeCursor();
             notifyChange(META_CHANGED);
         }
     }
 
     /**
-     * @param lid The list ID
-     * @return The cursor used for a specific ID
+     * @param trackId The track ID
      */
-    private Cursor getCursorForId(final long id) {
-        final Cursor c = getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                PROJECTION, "_id=" + id, null, null);
-        if (c != null) {
-            c.moveToFirst();
+    private void updateCursor(final long trackId) {
+        updateCursor("_id=" + trackId, null);
+    }
+
+    private void updateCursor(final String selection, final String[] selectionArgs) {
+        closeCursor();
+
+        mCursor = openCursorAndGoToFirst(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                PROJECTION, selection, selectionArgs);
+
+        long albumId = getAlbumId();
+        if (albumId >= 0) {
+            mAlbumCursor = openCursorAndGoToFirst(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                    ALBUM_PROJECTION, "_id=" + albumId, null);
+        } else {
+            mAlbumCursor = null;
+        }
+    }
+
+    private Cursor openCursorAndGoToFirst(Uri uri, String[] projection,
+            String selection, String[] selectionArgs) {
+        Cursor c = getContentResolver().query(uri, projection,
+                selection, selectionArgs, null, null);
+        if (c == null) {
+            return null;
+        }
+        if (!c.moveToFirst()) {
+            c.close();
+            return null;
         }
         return c;
+     }
+
+    private void closeCursor() {
+        if (mCursor != null) {
+            mCursor.close();
+            mCursor = null;
+        }
+        if (mAlbumCursor != null) {
+            mAlbumCursor.close();
+            mAlbumCursor = null;
+        }
     }
 
     /**
@@ -996,20 +1061,16 @@ public class MusicPlaybackService extends Service {
      */
     private void openCurrentAndMaybeNext(final boolean openNext) {
         synchronized (this) {
-            if (mCursor != null) {
-                mCursor.close();
-                mCursor = null;
-            }
+            closeCursor();
 
             if (mPlayListLen == 0) {
                 return;
             }
             stop(false);
 
-            mCursor = getCursorForId(mPlayList[mPlayPos]);
+            updateCursor(mPlayList[mPlayPos]);
             while (true) {
                 if (mCursor != null
-                        && mCursor.getCount() != 0
                         && openFile(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/"
                                 + mCursor.getLong(IDCOLIDX))) {
                     break;
@@ -1017,10 +1078,7 @@ public class MusicPlaybackService extends Service {
                 // if we get here then opening the file failed. We can close the
                 // cursor now, because
                 // we're either going to create a new one next, or stop trying
-                if (mCursor != null) {
-                    mCursor.close();
-                    mCursor = null;
-                }
+                closeCursor();
                 if (mOpenFailedCounter++ < 10 && mPlayListLen > 1) {
                     final int pos = getNextPosition(false);
                     if (pos < 0) {
@@ -1034,7 +1092,7 @@ public class MusicPlaybackService extends Service {
                     mPlayPos = pos;
                     stop(false);
                     mPlayPos = pos;
-                    mCursor = getCursorForId(mPlayList[mPlayPos]);
+                    updateCursor(mPlayList[mPlayPos]);
                 } else {
                     mOpenFailedCounter = 0;
                     Log.w(TAG, "Failed to open file for playback");
@@ -1249,6 +1307,13 @@ public class MusicPlaybackService extends Service {
     private void notifyChange(final String what) {
         if (D) Log.d(TAG, "notifyChange: what = " + what);
 
+        // Update the lockscreen controls
+        updateRemoteControlClient(what);
+
+        if (what.equals(POSITION_CHANGED)) {
+            return;
+        }
+
         final Intent intent = new Intent(what);
         intent.putExtra("id", getAudioId());
         intent.putExtra("artist", getArtistName());
@@ -1261,9 +1326,6 @@ public class MusicPlaybackService extends Service {
         final Intent musicIntent = new Intent(intent);
         musicIntent.setAction(what.replace(APOLLO_PACKAGE_NAME, MUSIC_PACKAGE_NAME));
         sendStickyBroadcast(musicIntent);
-
-        // Update the lockscreen controls
-        updateRemoteControlClient(what);
 
         if (what.equals(META_CHANGED)) {
             // Increase the play count for favorite songs.
@@ -1298,11 +1360,15 @@ public class MusicPlaybackService extends Service {
      * @param what The broadcast
      */
     private void updateRemoteControlClient(final String what) {
-        if (what.equals(PLAYSTATE_CHANGED)) {
-            mRemoteControlClient.setPlaybackState(mIsSupposedToBePlaying
-                    ? RemoteControlClient.PLAYSTATE_PLAYING
-                    : RemoteControlClient.PLAYSTATE_PAUSED);
-        } else if (what.equals(META_CHANGED)) {
+        int playState = mIsSupposedToBePlaying
+                ? RemoteControlClient.PLAYSTATE_PLAYING
+                : RemoteControlClient.PLAYSTATE_PAUSED;
+
+        if (ApolloUtils.hasJellyBeanMR2() && what.equals(POSITION_CHANGED)) {
+            mRemoteControlClient.setPlaybackState(playState, position(), 1.0f);
+        } else if (what.equals(PLAYSTATE_CHANGED)) {
+            mRemoteControlClient.setPlaybackState(playState);
+        } else if (what.equals(META_CHANGED) || what.equals(QUEUE_CHANGED)) {
             Bitmap albumArt = getAlbumArt();
             if (albumArt != null) {
                 // RemoteControlClient wants to recycle the bitmaps thrown at it, so we need
@@ -1316,6 +1382,8 @@ public class MusicPlaybackService extends Service {
             mRemoteControlClient
                     .editMetadata(true)
                     .putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, getArtistName())
+                    .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST,
+                            getAlbumArtistName())
                     .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, getAlbumName())
                     .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, getTrackName())
                     .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, duration())
@@ -1428,19 +1496,12 @@ public class MusicPlaybackService extends Service {
                 return;
             }
             mPlayPos = pos;
-            Cursor mCursor = getContentResolver().query(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, new String[] {
-                        "_id"
-                    }, "_id=" + mPlayList[mPlayPos], null, null);
-            if (mCursor == null || mCursor.getCount() == 0) {
+            updateCursor(mPlayList[mPlayPos]);
+            if (mCursor == null) {
                 SystemClock.sleep(3000);
-                mCursor = getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                        PROJECTION, "_id=" + mPlayList[mPlayPos], null, null);
+                updateCursor(mPlayList[mPlayPos]);
             }
-            if (mCursor != null) {
-                mCursor.close();
-                mCursor = null;
-            }
+            closeCursor();
             mOpenFailedCounter = 20;
             openCurrentAndNext();
             if (!mPlayer.isInitialized()) {
@@ -1538,18 +1599,12 @@ public class MusicPlaybackService extends Service {
                     };
                 }
                 try {
-                    mCursor = resolver.query(uri, PROJECTION, where, selectionArgs, null);
+                    updateCursor(where, selectionArgs);
                     if (mCursor != null) {
-                        if (mCursor.getCount() == 0) {
-                            mCursor.close();
-                            mCursor = null;
-                        } else {
-                            mCursor.moveToNext();
-                            ensurePlayListCapacity(1);
-                            mPlayListLen = 1;
-                            mPlayList[0] = mCursor.getLong(IDCOLIDX);
-                            mPlayPos = 0;
-                        }
+                        ensurePlayListCapacity(1);
+                        mPlayListLen = 1;
+                        mPlayList[0] = mCursor.getLong(IDCOLIDX);
+                        mPlayPos = 0;
                     }
                 } catch (final UnsupportedOperationException ex) {
                 }
@@ -1710,6 +1765,20 @@ public class MusicPlaybackService extends Service {
     }
 
     /**
+     * Returns the artist name
+     *
+     * @return The current song artist name
+     */
+    public String getAlbumArtistName() {
+        synchronized (this) {
+            if (mAlbumCursor == null) {
+                return null;
+            }
+            return mAlbumCursor.getString(mAlbumCursor.getColumnIndexOrThrow(AlbumColumns.ARTIST));
+        }
+    }
+
+    /**
      * Returns the album ID
      *
      * @return The current song album ID
@@ -1764,7 +1833,9 @@ public class MusicPlaybackService extends Service {
             } else if (position > mPlayer.duration()) {
                 position = mPlayer.duration();
             }
-            return mPlayer.seek(position);
+            long result = mPlayer.seek(position);
+            notifyChange(POSITION_CHANGED);
+            return result;
         }
         return -1;
     }
@@ -2282,7 +2353,7 @@ public class MusicPlaybackService extends Service {
                     if (service.mCursor != null) {
                         service.mCursor.close();
                     }
-                    service.mCursor = service.getCursorForId(service.mPlayList[service.mPlayPos]);
+                    service.updateCursor(service.mPlayList[service.mPlayPos]);
                     service.notifyChange(META_CHANGED);
                     service.updateNotification();
                     service.setNextTrack();
