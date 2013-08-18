@@ -1194,6 +1194,8 @@ public class MusicPlaybackService extends Service {
         if (mNextPlayPos >= 0 && mPlayList != null) {
             final long id = mPlayList[mNextPlayPos];
             mPlayer.setNextDataSource(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/" + id);
+        } else {
+            mPlayer.setNextDataSource(null);
         }
     }
 
@@ -1339,6 +1341,9 @@ public class MusicPlaybackService extends Service {
                     MusicUtils.getReleaseDateForAlbum(this, getAlbumId()));
         } else if (what.equals(QUEUE_CHANGED)) {
             saveQueue(true);
+            if (isPlaying()) {
+                setNextTrack();
+            }
         } else {
             saveQueue(false);
         }
