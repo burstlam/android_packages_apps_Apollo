@@ -24,7 +24,7 @@
     <string name="default_interval">30</string>
     <string name="settings_modversion_title">Mod Version Name</string>
     <string name="settings_mokeeopensource_title">MoKee OpenSource</string>
-    <string name="settings_version_code">1.1.3</string>   
+    <string name="settings_version_code">1.1.3</string>
     <string name="settings_origin_author_title">Origin Author</string>
 
 </resources>
