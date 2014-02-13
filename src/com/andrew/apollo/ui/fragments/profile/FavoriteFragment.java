@@ -42,6 +42,7 @@ import com.andrew.apollo.provider.FavoritesStore;
 import com.andrew.apollo.recycler.RecycleHolder;
 import com.andrew.apollo.utils.MusicUtils;
 import com.andrew.apollo.utils.NavUtils;
+import com.andrew.apollo.utils.PreferenceUtils;
 import com.andrew.apollo.widgets.ProfileTabCarousel;
 import com.andrew.apollo.widgets.VerticalScrollListener;
 
@@ -313,6 +314,7 @@ public class FavoriteFragment extends Fragment implements LoaderCallbacks<List<S
             // Set the empty text
             final TextView empty = (TextView)mRootView.findViewById(R.id.empty);
             empty.setText(getString(R.string.empty_favorite));
+            empty.setTextColor(PreferenceUtils.getInstance(getActivity()).getDefaultThemeColor(getActivity()));
             mListView.setEmptyView(empty);
             return;
         }
