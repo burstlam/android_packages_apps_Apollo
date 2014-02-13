@@ -45,6 +45,7 @@ import com.andrew.apollo.recycler.RecycleHolder;
 import com.andrew.apollo.ui.activities.BaseActivity;
 import com.andrew.apollo.utils.MusicUtils;
 import com.andrew.apollo.utils.NavUtils;
+import com.andrew.apollo.utils.PreferenceUtils;
 import com.viewpagerindicator.TitlePageIndicator;
 
 import java.util.List;
@@ -297,6 +298,7 @@ public class SongFragment extends Fragment implements LoaderCallbacks<List<Song>
             // Set the empty text
             final TextView empty = (TextView)mRootView.findViewById(R.id.empty);
             empty.setText(getString(R.string.empty_music));
+            empty.setTextColor(PreferenceUtils.getInstance(getActivity()).getDefaultThemeColor(getActivity()));
             mListView.setEmptyView(empty);
             return;
         }
