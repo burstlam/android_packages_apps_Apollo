@@ -21,6 +21,5 @@
     <string name="select_quit_time">请设置自动关闭的时间（分）</string>
     <string name="quit_warining">播放器将在%1$s分钟后停止播放</string>
     <string name="settings_modversion_title">修订版本号</string>
-    <string name="settings_origin_author_title">原作者</string>
 
 </resources>

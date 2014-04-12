@@ -101,7 +101,7 @@
   <string name="settings_storage_category">Opslag</string>
   <string name="settings_data_category">Gegevens</string>
   <string name="settings_about_category">Over</string>
-  <string name="settings_origin_author_title">Auteur</string>
+  <string name="settings_author_title">Auteur</string>
   <string name="settings_about_apollo">Over Apollo</string>
   <string name="settings_special_thanks">Speciale dank</string>
   <string name="settings_lopez_summary">Pictogram- en Play Store-bannerontwerp</string>

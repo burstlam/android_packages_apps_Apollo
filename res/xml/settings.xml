@@ -64,7 +64,7 @@
             <PreferenceCategory android:title="@string/settings_about_category" >
                 <Preference
                     android:summary="@string/settings_self_title"
-                    android:title="@string/settings_origin_author_title" />
+                    android:title="@string/settings_author_title" />
                 <Preference
                     android:key="version"
                     android:title="@string/settings_version_title" />
