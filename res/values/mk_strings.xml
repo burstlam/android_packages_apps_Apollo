@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2012-2013 The MoKee OpenSource Project
+<!-- Copyright (C) 2012-2014 The MoKee OpenSource Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
+
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
     <string name="menu_sleep_mode">Sleep Timer</string>
@@ -24,7 +25,6 @@
     <string name="default_interval">30</string>
     <string name="settings_modversion_title">Mod Version Name</string>
     <string name="settings_mokeeopensource_title">MoKee OpenSource</string>
-    <string name="settings_version_code">1.1.2</string>   
-    <string name="settings_origin_author_title">Origin Author</string>
+    <string name="settings_version_code">1.1.3</string>
 
 </resources>

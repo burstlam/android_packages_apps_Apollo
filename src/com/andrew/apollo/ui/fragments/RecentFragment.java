@@ -307,6 +307,7 @@ public class RecentFragment extends Fragment implements LoaderCallbacks<List<Alb
             // Set the empty text
             final TextView empty = (TextView)mRootView.findViewById(R.id.empty);
             empty.setText(getString(R.string.empty_recent));
+            empty.setTextColor(PreferenceUtils.getInstance(getActivity()).getDefaultThemeColor(getActivity()));
             if (isSimpleLayout()) {
                 mListView.setEmptyView(empty);
             } else {

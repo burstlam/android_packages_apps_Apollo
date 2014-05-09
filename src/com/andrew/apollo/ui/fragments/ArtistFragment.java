@@ -295,6 +295,7 @@ public class ArtistFragment extends Fragment implements LoaderCallbacks<List<Art
             // Set the empty text
             final TextView empty = (TextView)mRootView.findViewById(R.id.empty);
             empty.setText(getString(R.string.empty_music));
+            empty.setTextColor(PreferenceUtils.getInstance(getActivity()).getDefaultThemeColor(getActivity()));
             if (isSimpleLayout()) {
                 mListView.setEmptyView(empty);
             } else {

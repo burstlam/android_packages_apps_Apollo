@@ -41,12 +41,12 @@
         <!-- Missing artwork -->
         <CheckBoxPreference
             android:defaultValue="true"
-            android:key="album_images"
+            android:key="download_missing_artwork"
             android:title="@string/settings_download_missing_artwork_title" />
         <!-- Missing artist images -->
         <CheckBoxPreference
             android:defaultValue="true"
-            android:key="artist_images"
+            android:key="download_missing_artist_images"
             android:title="@string/settings_download_artist_images_title" />
     </PreferenceCategory>
     <!-- Storage catetory -->
@@ -64,7 +64,7 @@
             <PreferenceCategory android:title="@string/settings_about_category" >
                 <Preference
                     android:summary="@string/settings_self_title"
-                    android:title="@string/settings_origin_author_title" />
+                    android:title="@string/settings_author_title" />
                 <Preference
                     android:key="version"
                     android:title="@string/settings_version_title" />

@@ -38,6 +38,7 @@ import com.andrew.apollo.model.Genre;
 import com.andrew.apollo.recycler.RecycleHolder;
 import com.andrew.apollo.ui.activities.ProfileActivity;
 import com.andrew.apollo.utils.MusicUtils;
+import com.andrew.apollo.utils.PreferenceUtils;
 
 import java.util.List;
 
@@ -211,6 +212,7 @@ public class GenreFragment extends Fragment implements LoaderCallbacks<List<Genr
             // Set the empty text
             final TextView empty = (TextView)mRootView.findViewById(R.id.empty);
             empty.setText(getString(R.string.empty_music));
+            empty.setTextColor(PreferenceUtils.getInstance(getActivity()).getDefaultThemeColor(getActivity()));
             mListView.setEmptyView(empty);
             return;
         }
